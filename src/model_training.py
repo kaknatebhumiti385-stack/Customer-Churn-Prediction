@@ -6,7 +6,12 @@ import os
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.metrics import (
+    accuracy_score,
+    classification_report,
+    confusion_matrix,
+    roc_auc_score
+)
 
 # Load dataset
 df = pd.read_csv(
@@ -37,6 +42,30 @@ model = LogisticRegression(max_iter=1000)
 
 # Train model
 model.fit(X_train, y_train)
+# Feature Selection using Model Coefficients
+feature_importance = pd.DataFrame({
+    "Feature": X.columns,
+    "Importance": abs(model.coef_[0])
+})
+
+feature_importance = feature_importance.sort_values(
+    by="Importance",
+    ascending=False
+)
+
+print("\n--- TOP 10 IMPORTANT FEATURES ---")
+print(feature_importance.head(10))
+# Save feature importance report
+import os
+
+os.makedirs("reports", exist_ok=True)
+
+feature_importance.to_csv(
+    "reports/feature_importance.csv",
+    index=False
+)
+
+print("\nFeature importance report saved successfully!")
 
 # Make predictions
 y_pred = model.predict(X_test)
@@ -45,6 +74,12 @@ y_pred = model.predict(X_test)
 print("\n--- LOGISTIC REGRESSION RESULTS ---")
 
 print("Accuracy:", accuracy_score(y_test, y_pred))
+# ROC-AUC Score
+y_probability = model.predict_proba(X_test)[:, 1]
+
+roc_auc = roc_auc_score(y_test, y_probability)
+
+print("ROC-AUC Score:", roc_auc)
 
 print("\nClassification Report:")
 print(classification_report(y_test, y_pred))
